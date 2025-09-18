@@ -1,0 +1,51 @@
+{
+  "name": "shopify-auth-service",
+  "version": "1.0.0",
+  "description": "Standalone Shopify OAuth authentication service",
+  "main": "src/handler.js",
+  "scripts": {
+    "dev": "serverless offline",
+    "build": "tsc",
+    "deploy": "serverless deploy",
+    "deploy:dev": "serverless deploy --stage dev",
+    "deploy:prod": "serverless deploy --stage prod",
+    "offline": "serverless offline",
+    "test": "node test/test-endpoints.js",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix"
+  },
+  "keywords": ["shopify", "oauth", "authentication", "serverless"],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.699.0",
+    "@aws-sdk/lib-dynamodb": "^3.699.0",
+    "axios": "^1.11.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "express-session": "^1.17.3",
+    "helmet": "^7.1.0",
+    "serverless-http": "^3.2.0",
+    "zod": "^4.1.7"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/express-session": "^1.17.11",
+    "@types/node": "^24.3.1",
+    "@typescript-eslint/eslint-plugin": "^8.43.0",
+    "@typescript-eslint/parser": "^8.43.0",
+    "eslint": "^9.35.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "nodemon": "^3.1.10",
+    "serverless": "^4.19.1",
+    "serverless-offline": "^14.0.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
