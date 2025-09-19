@@ -16,7 +16,7 @@ export const handler = async (
   context: Context
 ): Promise<APIGatewayProxyResult> => {
   try {
-    return await serverlessApp(event, context);
+    return await serverlessApp(event, context) as APIGatewayProxyResult;
   } catch (error) {
     console.error('Lambda handler error:', error);
     return {
