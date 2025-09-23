@@ -5,7 +5,7 @@ useDotenv: true
 provider:
   name: aws
   runtime: nodejs22.x
-  region: us-east-2
+  region: us-east-1
   environment:
     # Non-sensitive configuration
     SHOPIFY_API_VERSION: ${env:SHOPIFY_API_VERSION}
