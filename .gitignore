@@ -39,3 +39,6 @@ coverage/
 
 # AWS credentials
 .aws/
+
+# utils
+migrate-parameters.sh

@@ -193,13 +193,10 @@ export class OAuthService {
       return null;
     }
 
-    // Remove protocol if present
     let cleanDomain = shopDomain.replace(/^https?:\/\//, '');
     
-    // Remove .myshopify.com if present (we'll add it back)
     cleanDomain = cleanDomain.replace(/\.myshopify\.com$/, '');
     
-    // Validate shop name format
     if (!/^[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9]$/.test(cleanDomain)) {
       return null;
     }

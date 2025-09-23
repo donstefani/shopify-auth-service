@@ -32,14 +32,14 @@ provider:
             - dynamodb:Query
             - dynamodb:Scan
           Resource: 
-            - "arn:aws:dynamodb:us-east-2:767398030559:table/portfolio-shopify-auth"
+            - "arn:aws:dynamodb:us-east-1:767398030559:table/portfolio-shopify-auth"
         - Effect: Allow
           Action:
             - ssm:GetParameter
             - ssm:GetParameters
             - ssm:GetParametersByPath
           Resource:
-            - "arn:aws:ssm:us-east-2:767398030559:parameter/shopify-auth/*"
+            - "arn:aws:ssm:us-east-1:767398030559:parameter/shopify-auth/*"
 
 functions:
   api:
@@ -71,4 +71,4 @@ custom:
       allowCredentials: true
 
 # Note: Using existing DynamoDB table 'portfolio-shopify-auth' 
-# created by the webhook-logger service
+# created by the initial deployment
