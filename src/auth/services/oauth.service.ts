@@ -39,7 +39,7 @@ export class OAuthService {
   /**
    * Generate authorization URL for OAuth flow
    */
-  generateAuthUrl(shopDomain: string): OAuthApiResponse<{ authUrl: string; state: string }> {
+  async generateAuthUrl(shopDomain: string): Promise<OAuthApiResponse<{ authUrl: string; state: string }>> {
     try {
       const cleanShopDomain = this.sanitizeShopDomain(shopDomain);
       
@@ -51,6 +51,9 @@ export class OAuthService {
       }
 
       const state = this.tokenManager.generateState();
+      
+      // Store state in DynamoDB for validation
+      await this.tokenManager.storeOAuthState(state, cleanShopDomain);
       
       const authUrl = new URL(`https://${cleanShopDomain}/admin/oauth/authorize`);
       authUrl.searchParams.set('client_id', this.config.clientId);
@@ -72,6 +75,13 @@ export class OAuthService {
         error: error instanceof Error ? error.message : 'Failed to generate authorization URL'
       };
     }
+  }
+
+  /**
+   * Validate OAuth state parameter
+   */
+  async validateOAuthState(state: string): Promise<{ valid: boolean; shopDomain?: string }> {
+    return await this.tokenManager.validateOAuthState(state);
   }
 
   /**
@@ -110,8 +120,14 @@ export class OAuthService {
         data: tokenData,
         message: 'Token exchange successful'
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Token exchange error:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        response: error.response?.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText
+      });
       return {
         success: false,
         error: 'Failed to exchange code for token',
