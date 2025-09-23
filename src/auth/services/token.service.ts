@@ -15,7 +15,7 @@ export class TokenManagerService {
 
   constructor() {
     this.dynamoClient = DynamoDBDocumentClient.from(new DynamoDBClient({
-      region: process.env.AWS_REGION || 'us-east-2'
+      region: process.env.AWS_REGION || 'us-east-1'
     }));
     this.tableName = process.env.AWS_DYNAMODB_TABLE || 'shopify-auth-tokens';
     this.encryptionKey = process.env.ENCRYPTION_KEY || 'fallback-key-change-in-production';
@@ -26,6 +26,53 @@ export class TokenManagerService {
    */
   generateState(): string {
     return crypto.randomBytes(32).toString('hex');
+  }
+
+  /**
+   * Store OAuth state in DynamoDB for validation
+   */
+  async storeOAuthState(state: string, shopDomain: string): Promise<void> {
+    const params = {
+      TableName: this.tableName,
+      Item: {
+        id: `oauth_state:${state}`,
+        shopDomain,
+        createdAt: new Date().toISOString()
+      }
+    };
+
+    await this.dynamoClient.send(new PutCommand(params));
+  }
+
+  /**
+   * Validate and consume OAuth state
+   */
+  async validateOAuthState(state: string): Promise<{ valid: boolean; shopDomain?: string }> {
+    try {
+      const params = {
+        TableName: this.tableName,
+        Key: {
+          id: `oauth_state:${state}`
+        }
+      };
+
+      const result = await this.dynamoClient.send(new GetCommand(params));
+      
+      if (!result.Item) {
+        return { valid: false };
+      }
+
+      // Delete the state after validation (single-use)
+      await this.dynamoClient.send(new DeleteCommand(params));
+
+      return { 
+        valid: true, 
+        shopDomain: result.Item.shopDomain 
+      };
+    } catch (error) {
+      console.error('Error validating OAuth state:', error);
+      return { valid: false };
+    }
   }
 
   /**

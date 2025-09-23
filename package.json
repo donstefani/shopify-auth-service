@@ -14,7 +14,12 @@
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix"
   },
-  "keywords": ["shopify", "oauth", "authentication", "serverless"],
+  "keywords": [
+    "shopify",
+    "oauth",
+    "authentication",
+    "serverless"
+  ],
   "author": "",
   "license": "MIT",
   "type": "commonjs",
@@ -22,6 +27,7 @@
     "@aws-sdk/client-dynamodb": "^3.699.0",
     "@aws-sdk/lib-dynamodb": "^3.699.0",
     "axios": "^1.11.0",
+    "connect-dynamodb": "^3.0.5",
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "express-session": "^1.17.3",

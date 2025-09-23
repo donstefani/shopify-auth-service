@@ -38,15 +38,11 @@ router.get('/shopify', async (req: Request, res: Response) => {
     }
 
     const { shop } = validation.data;
-    const result = getOAuthService().generateAuthUrl(shop);
+    const result = await getOAuthService().generateAuthUrl(shop);
     
     if (!result.success) {
       return res.status(400).json(result);
     }
-
-    // Store state in session for CSRF protection
-    req.session.oauthState = result.data!.state;
-    req.session.shopDomain = shop;
 
     res.json({
       success: true,
@@ -83,16 +79,17 @@ router.get('/shopify/callback', async (req: Request, res: Response) => {
 
     const { code, state, shop } = validation.data;
 
-    // Validate state parameter for CSRF protection
-    if (!req.session.oauthState || req.session.oauthState !== state) {
+    // Validate state parameter using DynamoDB
+    const stateValidation = await getOAuthService().validateOAuthState(state);
+    if (!stateValidation.valid) {
       return res.status(400).json({
         success: false,
         error: 'Invalid state parameter. Possible CSRF attack.'
       });
     }
 
-    // Validate shop domain matches session
-    if (req.session.shopDomain !== shop) {
+    // Validate shop domain matches stored state
+    if (stateValidation.shopDomain !== shop) {
       return res.status(400).json({
         success: false,
         error: 'Shop domain mismatch. Possible security issue.'
@@ -135,26 +132,40 @@ router.get('/shopify/callback', async (req: Request, res: Response) => {
  */
 router.get('/status', async (req: Request, res: Response) => {
   try {
-    if (!req.session.isAuthenticated || !req.session.shopDomain) {
-      return res.json({
-        success: true,
-        data: {
-          authenticated: false,
-          message: 'Not authenticated'
-        }
-      });
+    // Check if we have session data
+    if (req.session.isAuthenticated && req.session.shopDomain) {
+      // Get stored token to verify it still exists
+      const tokenResult = await getOAuthService().getStoredToken(req.session.shopDomain);
+      
+      if (tokenResult.success) {
+        return res.json({
+          success: true,
+          data: {
+            authenticated: true,
+            shop: req.session.shopDomain,
+            hasToken: true,
+            scopes: tokenResult.data!.scopes
+          }
+        });
+      } else {
+        // Token doesn't exist, clear session
+        req.session.destroy(() => {});
+        return res.json({
+          success: true,
+          data: {
+            authenticated: false,
+            message: 'Token not found'
+          }
+        });
+      }
     }
 
-    // Get stored token
-    const tokenResult = await getOAuthService().getStoredToken(req.session.shopDomain);
-    
+    // No session data
     res.json({
       success: true,
       data: {
-        authenticated: tokenResult.success,
-        shop: req.session.shopDomain,
-        hasToken: tokenResult.success,
-        scopes: tokenResult.success ? tokenResult.data!.scopes : null
+        authenticated: false,
+        message: 'Not authenticated'
       }
     });
   } catch (error) {
@@ -183,7 +194,12 @@ router.get('/token', async (req: Request, res: Response) => {
     const result = await getOAuthService().getStoredToken(req.session.shopDomain);
     
     if (!result.success) {
-      return res.status(404).json(result);
+      // Token doesn't exist, clear session
+      req.session.destroy(() => {});
+      return res.status(404).json({
+        success: false,
+        error: 'Token not found'
+      });
     }
 
     res.json({
@@ -196,6 +212,48 @@ router.get('/token', async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Get token error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to retrieve token'
+    });
+  }
+});
+
+/**
+ * GET /auth/token/:shop
+ * 
+ * Get access token for a specific shop (for testing)
+ */
+router.get('/token/:shop', async (req: Request, res: Response) => {
+  try {
+    const { shop } = req.params;
+    
+    if (!shop) {
+      return res.status(400).json({
+        success: false,
+        error: 'Shop parameter is required'
+      });
+    }
+
+    const result = await getOAuthService().getStoredToken(shop);
+    
+    if (!result.success) {
+      return res.status(404).json({
+        success: false,
+        error: 'Token not found for this shop'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        accessToken: result.data!.accessToken,
+        scopes: result.data!.scopes,
+        shop: shop
+      }
+    });
+  } catch (error) {
+    console.error('Get token by shop error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to retrieve token'

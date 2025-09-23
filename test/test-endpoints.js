@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const BASE_URL = 'http://localhost:3000/dev';
+const BASE_URL = 'https://s0avdp4219.execute-api.us-east-1.amazonaws.com/dev';
 
 // Helper function to make requests and log responses
 async function testEndpoint(method, endpoint, data = null) {
